@@ -84,7 +84,7 @@ class Benes:
 
  
         for pad_array in (pad_array_in, pad_array_ex):
-            pad_array.movex(-self.num_pads / 2 * self.pad_spacing + self.pad_size / 2 + 500)
+            pad_array.movex(-self.num_pads / 2 * self.pad_spacing + self.pad_size / 2 + 1000)
             pad_array.movey(self.pad_clearance)
         
         for port in range(self.num_pads):
@@ -95,7 +95,7 @@ class Benes:
 
  
         for pad_array in (pad_array_in, pad_array_ex):
-            pad_array.movex(-self.num_pads / 2 * self.pad_spacing + self.pad_size / 2 + 500)
+            pad_array.movex(-self.num_pads / 2 * self.pad_spacing + self.pad_size / 2 + 1000)
             pad_array.movey(self.pad_clearance+100)
         
         for port in range(self.num_pads):
@@ -231,10 +231,14 @@ class Benes:
                 
         ports1=[]
         ports2=[]
+        pads=[]
         for i in range(12):
             ports1.append(self.component[f"e_{i+1}_1"])
             ports2.append(self.component[f"e_{i+1}_2"])
-    
+
+        for i in range(20):
+            pads.append(self.component[f"Pad_{i}"])
+
         new_ports=[]
         new_ground=[]
 
@@ -243,14 +247,14 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=10)
+                                       separation=20)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=ports2[0:3],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=10)
-        new_ground.extend(grounds[::-1])
+                                       separation=20)
+        new_ground.append(grounds[1])
         new_ports.extend(ports[::-1])
 
 
@@ -261,14 +265,14 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=10)
+                                       separation=20)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=[ports2[i] for i in [3,6]],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=10)        
-        new_ground.extend(grounds[::-1])
+                                       separation=20)        
+        new_ground.append(grounds[0])
         new_ports.extend(ports[::-1])
 
 
@@ -279,15 +283,15 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=10)
+                                       separation=20)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=[ports2[i] for i in [4,7]],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=10)
+                                       separation=20)
         
-        new_ground.extend(grounds[::-1])
+        new_ground.append(grounds[0])
         new_ports.extend(ports[::-1])
 
 
@@ -298,39 +302,46 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=10)
+                                       separation=20)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=[ports2[i] for i in [5,8]],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=10)
-        new_ground.extend(grounds[::-1])
+                                       separation=20)
+        new_ground.append(grounds[0])
         new_ports.extend(ports[::-1])
 
 
         routes, ports = gf.routing.route_ports_to_side(component=self.component,
-                                       ports=ports1[9:12],
-                                       side="north",
-                                       radius=0,
-                                       cross_section=my_route_e,
-                                       separation=10)
-        routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=ports2[9:12],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=10)        
-        new_ground.extend(grounds[::-1])
+                                       separation=20)
+        routes, grounds = gf.routing.route_ports_to_side(component=self.component,
+                                       ports=ports1[9:12],
+                                       side="north",
+                                       radius=0,
+                                       cross_section=my_route_e,
+                                       separation=20,)        
+        new_ground.append(grounds[1])
         new_ports.extend(ports[::-1])
 
-
+        ports2=new_ports
+        ports2.extend(new_ground)
         # print(new_ports)
-        # print(ports1)
-        # gf.routing.route_bundle_electrical(component=self.component, 
-        #                                    ports1=new_ports, ports2=ports2,
-        #                                    cross_section=my_route_e,
-        #                                    separation=15)
+        print(new_ground)
+        gf.routing.route_bundle_electrical(component=self.component, 
+                                           ports2=ports2, 
+                                           ports1=[self.component["Pad_12"],self.component["Pad_11"],self.component["Pad_10"],
+                                                   self.component["Pad_1"],self.component["Pad_2"],
+                                                   self.component["Pad_4"],self.component["Pad_5"],
+                                                   self.component["Pad_7"],self.component["Pad_8"],
+                                                   self.component["Pad_16"],self.component["Pad_17"],self.component["Pad_18"],
+                                                   self.component["Pad_0"],self.component["Pad_3"],self.component["Pad_6"],self.component["Pad_9"],self.component["Pad_19"],],
+                                           cross_section=my_route_e,
+                                           separation=15)
 
 master_component=gf.Component("BenesCircuit")
 sw6x6 = Benes(
@@ -342,7 +353,7 @@ sw6x6 = Benes(
     mmi_gap=0.47,
     mmi_taper_l=10,
     arm_dl=0,
-    pad_clearance=1500,
+    pad_clearance=2500,
     grating_number=14,
 )
 
@@ -383,7 +394,7 @@ sw6x6.interconnect_electrical()
 
 
 
-# master_component.pprint_ports()
+master_component.pprint_ports()
 master_component.draw_ports()
 master_component.write_gds(f"benes_test.gds")
 

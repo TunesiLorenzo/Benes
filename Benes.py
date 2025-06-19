@@ -57,7 +57,7 @@ class Benes:
                                                                                                                           cross_section_heater=xs_metal, 
                                                                                                                           via_stack=None),
                                                                        splitter=gf.components.mmis.mmi2x2(width=self.wg_w,width_mmi=self.mmi_w,gap_mmi=self.mmi_gap,length_taper=self.mmi_taper_l,length_mmi=self.mmi_l,width_taper=self.mmi_taper_w),
-                                                                       combiner=gf.components.mmis.mmi2x2(width=self.wg_w,width_mmi=self.mmi_w,gap_mmi=self.mmi_gap,length_taper=self.mmi_taper_l,length_mmi=self.mmi_l),
+                                                                       combiner=gf.components.mmis.mmi2x2(width=self.wg_w,width_mmi=self.mmi_w,gap_mmi=self.mmi_gap,length_taper=self.mmi_taper_l,length_mmi=self.mmi_l,width_taper=self.mmi_taper_w),
                                                                        bend=gf.components.bends.bend_euler(width=self.wg_w,radius=self.bend_r))
         mzi.move(origin=(0,0),destination=self.pos)
         self.component.add_port(name=f"o_{self.instance}_1",port=mzi["o2"])
@@ -76,7 +76,7 @@ class Benes:
         contact = self.component << gf.components.rectangle(size=(self.heater_w,self.heater_w), layer=(12,0))
         contact.dmove(origin=(0,0),destination=(self.mmi_l+2*self.bend_r+self.mmi_taper_l+self.arm_l-self.heater_w+self.pos[0],
                                                 self.mmi_gap/2+self.mmi_taper_w/2+2*self.bend_r+self.pos[1]+2-self.heater_w/2))
-        self.component.add_port(name=f"e_{self.instance}_2",port=contact["e4"])
+        self.component.add_port(name=f"e_{self.instance}_2",port=contact["e3"])
 
     def add_pads(self):
         pad_array_in = self.component << gf.components.pad_array("pad", columns=self.num_pads, column_pitch=self.pad_spacing, port_orientation=270, size=(self.pad_size, self.pad_size), centered_ports=False, layer=(13,0))
@@ -90,8 +90,18 @@ class Benes:
         for port in range(self.num_pads):
             self.component.add_port(port=pad_array_ex[f"e{10-port}"],name=f"Pad_{port}")
 
-        return pad_array_ex
-    
+        pad_array_in = self.component << gf.components.pad_array("pad", columns=self.num_pads, column_pitch=self.pad_spacing, port_orientation=90, size=(self.pad_size, self.pad_size), centered_ports=False, layer=(13,0))
+        pad_array_ex = self.component << gf.components.pad_array("pad", columns=self.num_pads, column_pitch=self.pad_spacing, port_orientation=90, size=(self.pad_size + 2 * self.pad_tolerance, self.pad_size + 2 * self.pad_tolerance), layer=(12,0), centered_ports=False,auto_rename_ports=True)
+
+ 
+        for pad_array in (pad_array_in, pad_array_ex):
+            pad_array.movex(-self.num_pads / 2 * self.pad_spacing + self.pad_size / 2 + 500)
+            pad_array.movey(self.pad_clearance+100)
+        
+        for port in range(self.num_pads):
+            self.component.add_port(port=pad_array_ex[f"e{port+1}"],name=f"Pad_{10+port}")
+
+
     def add_grating_coupler(self, pos=[[0,140],[1400,140]]):
 
         gdspath = os.path.join(os.getcwd(), "ANT_GC.GDS")
@@ -134,42 +144,39 @@ class Benes:
             layer=self.layer_wg,           # same as your original routing_layer usage
             radius_min=1
         )
-        my_route_e = gf.cross_section.metal_routing(
-            width=5,
-            layer=(12,0),
-        )
+
         crossing_only = gf.components.waveguides.crossing_etched(width=self.wg_w)
         crossing_function = gf.components.waveguides.crossing45(crossing=crossing_only, port_spacing=20, cross_section=my_route_s, cross_section_bends=my_route_s)
 
         c1 = self.component << crossing_function.copy()
-        c1.dmove(origin=(c1.x, c1.y), destination=(370,70))
+        c1.dmove(origin=(c1.x, c1.y), destination=(370,40))
 
         c2 = self.component << crossing_function.copy()
-        c2.dmove(origin=(c2.x, c2.y), destination=(370,240))
+        c2.dmove(origin=(c2.x, c2.y), destination=(370,240-24.37900))
 
         c3 = self.component << crossing_function.copy()
-        c3.dmove(origin=(c3.x, c3.y), destination=(450,140))
+        c3.dmove(origin=(c3.x, c3.y), destination=(450,140-54.58100))
 
         
         c4 = self.component << crossing_function.copy()
-        c4.dmove(origin=(c4.x, c4.y), destination=(1530,140))
+        c4.dmove(origin=(c4.x, c4.y), destination=(1530,140-54.58100))
 
         c5= self.component << crossing_function.copy()
-        c5.dmove(origin=(c5.x, c5.y), destination=(1610,70))
+        c5.dmove(origin=(c5.x, c5.y), destination=(1610,40))
 
         c6 = self.component << crossing_function.copy()
-        c6.dmove(origin=(c6.x, c6.y), destination=(1610,240))
+        c6.dmove(origin=(c6.x, c6.y), destination=(1610,240-24.37900))
 
         
         gf.routing.route_bundle_sbend(component=self.component,
-            ports2=[self.component["o_4_3"],self.component["o_4_4"],self.component["o_5_4"], self.component["o_7_3"],self.component["o_7_4"],self.component["o_8_4"]],
-            ports1=[self.component["o_5_2"],self.component["o_6_2"],self.component["o_6_1"], self.component["o_8_2"],self.component["o_9_2"],self.component["o_9_1"]],
+            ports1=[self.component["o_4_3"],self.component["o_4_4"],self.component["o_5_4"], self.component["o_7_3"],self.component["o_7_4"],self.component["o_8_4"]],
+            ports2=[self.component["o_5_2"],self.component["o_6_2"],self.component["o_6_1"], self.component["o_8_2"],self.component["o_9_2"],self.component["o_9_1"]],
             cross_section=my_route_s,
             allow_width_mismatch=True)
         
         gf.routing.route_bundle_sbend(component=self.component,
-            ports2=[self.component["o_1_3"],self.component["o_1_4"],self.component["o_2_3"],self.component["o_2_4"],self.component["o_3_3"],self.component["o_3_4"]],
-            ports1=[self.component["o_5_1"],c2["o4"],c2["o2"],c1["o4"],c1["o2"],self.component["o_7_2"]],
+            ports1=[self.component["o_1_3"],self.component["o_1_4"],self.component["o_2_3"],self.component["o_2_4"],self.component["o_3_3"],self.component["o_3_4"]],
+            ports2=[self.component["o_5_1"],c2["o4"],c2["o2"],c1["o4"],c1["o2"],self.component["o_7_2"]],
             cross_section=my_route_s,
             allow_width_mismatch=True)
         
@@ -191,66 +198,45 @@ class Benes:
             cross_section=my_route_s,
             allow_width_mismatch=True)
         
-        # gf.routing.route_bundle_sbend(component=self.component,
-        #     ports2=[self.component["o_1_4"],self.component["o_1_3"],self.component["o_2_4"], self.component["o_2_3"],self.component["o_3_4"],self.component["o_6_1"],self.component["o_6_2"], c2["o4"], 
-        #             self.component["o_5_1"],c1["o3"],self.component["o_4_1"],self.component["o_4_2"]],
-        #     ports1=[aux1["o1"], c1["o2"],c1["o4"],c3["o2"],c3["o4"],self.component["o_3_3"],c3["o3"], c3["o1"], c2["o3"],c2["o2"],c2["o1"],c1["o1"]],
-        #     cross_section=my_route_s,
-        #     allow_width_mismatch=True)
+        gf.routing.route_bundle(component=self.component,
+            ports2=[self.component["o_1_1"],self.component["o_1_2"],self.component["o_2_1"],self.component["o_2_2"],self.component["o_3_1"],self.component["o_3_2"],],
+            ports1=[self.component["Grating0_1"],self.component["Grating0_2"],self.component["Grating0_3"],self.component["Grating0_4"],self.component["Grating0_5"],self.component["Grating0_6"]],
+            cross_section=my_route_s,
+            allow_width_mismatch=True)
         
-
-        # c4 = self.component << crossing_function.copy()
-        # c4.dmove(origin=(c4.x, c4.y), destination=(930,100))
-
-        # gf.routing.route_bundle_sbend(component=self.component,
-        #     ports2=[self.component["o_9_1"],self.component["o_6_4"],self.component["o_5_3"],self.component["o_8_2"],self.component["o_7_1"],aux1["o3"],c4["o3"],c4["o1"]],
-        #     ports1=[self.component["o_6_3"],c4["o4"],c4["o2"],self.component["o_5_4"],self.component["o_4_3"],self.component["o_7_2"],self.component["o_9_2"],self.component["o_8_1"]],
-        #     cross_section=my_route_s,
-        #     allow_width_mismatch=True)
+        gf.routing.route_bundle(component=self.component,
+            ports2=[self.component["o_10_3"],self.component["o_10_4"],self.component["o_11_3"],self.component["o_11_4"],self.component["o_12_3"],self.component["o_12_4"],],
+            #ports1=[self.component["Grating1_2"],self.component["Grating1_1"],self.component["Grating1_0"]],
+            ports1=[self.component["Grating0_12"],self.component["Grating0_11"],self.component["Grating0_10"],self.component["Grating0_9"],self.component["Grating0_8"],self.component["Grating0_7"]],
+            cross_section=my_route_s)
         
-        # gf.routing.route_bundle_sbend(component=self.component,
-        #     ports2=[self.component["o_3_1"],self.component["o_2_1"],self.component["o_1_2"]],
-        #     ports1=[self.component["Grating0_1"],self.component["Grating0_2"],self.component["Grating0_3"]],
-        #     cross_section=my_route_s,
-        #     allow_width_mismatch=True)
-        
-        # gf.routing.route_bundle(component=self.component,
-        #     ports2=[self.component["o_7_4"],self.component["o_8_3"],self.component["o_9_3"]],
-        #     #ports1=[self.component["Grating1_2"],self.component["Grating1_1"],self.component["Grating1_0"]],
-        #     ports1=[self.component["Grating0_4"],self.component["Grating0_5"],self.component["Grating0_6"]],
-        #     cross_section=my_route_s)
-        
-        # bend1 = self.component << gf.components.bend_circular(width=self.wg_w,radius = 15, angle = 180)
-        # bend1.connect("o1",self.component["Grating0_0"])
-        # straight1 = self.component << gf.components.straight(length=50,cross_section=my_route_s)
-        # straight1.connect("o1",bend1["o2"])
+        bend1 = self.component << gf.components.bend_circular(width=self.wg_w,radius = 15, angle = 180)
+        bend1.connect("o1",self.component["Grating0_0"])
+        straight1 = self.component << gf.components.straight(length=50,cross_section=my_route_s)
+        straight1.connect("o1",bend1["o2"])
 
-        # bend2 = self.component << gf.components.bend_circular(width=self.wg_w,radius = 15, angle = -180)
-        # bend2.connect("o1",self.component["Grating0_7"])
-        # straight2 = self.component << gf.components.straight(length=50,cross_section=my_route_s)
-        # straight2.connect("o1",bend2["o2"])
+        bend2 = self.component << gf.components.bend_circular(width=self.wg_w,radius = 15, angle = -180)
+        bend2.connect("o1",self.component["Grating0_13"])
+        straight2 = self.component << gf.components.straight(length=50,cross_section=my_route_s)
+        straight2.connect("o1",bend2["o2"])
 
-        # gf.routing.route_single(component=self.component, port1=straight1["o2"], port2=straight2["o2"], cross_section=my_route_s)
+        gf.routing.route_single(component=self.component, port1=straight1["o2"], port2=straight2["o2"], cross_section=my_route_s)
 
-    def electrical_benes(self):
+    def interconnect_electrical(self):
+
+        my_route_e = gf.cross_section.metal_routing(
+            width=5,
+            layer=(12,0),
+        )
+                
         ports1=[]
         ports2=[]
-        for i in range(9):
+        for i in range(12):
             ports1.append(self.component[f"e_{i+1}_1"])
-            ports2.append(self.component[f"Pad_{i}"])
+            ports2.append(self.component[f"e_{i+1}_2"])
     
-        # gf.routing.route_bundle(component=self.component,
-        #                                    ports1=ports1[0:3],
-        #                                    ports2=ports2[0:3],
-        #                                    cross_section=my_route_e,
-        #                                    separation=10)
-        
-        # gf.routing.route_bundle(component=self.component,
-        #                                    ports1=ports1[3:9],
-        #                                    ports2=ports2[3:9],
-        #                                    cross_section=my_route_e,
-        #                                    separation=10)
         new_ports=[]
+        new_ground=[]
 
         routes, ports = gf.routing.route_ports_to_side(component=self.component,
                                        ports=ports1[0:3],
@@ -258,31 +244,93 @@ class Benes:
                                        radius=0,
                                        cross_section=my_route_e,
                                        separation=10)
+        routes, grounds = gf.routing.route_ports_to_side(component=self.component,
+                                       ports=ports2[0:3],
+                                       side="north",
+                                       radius=0,
+                                       cross_section=my_route_e,
+                                       separation=10)
+        new_ground.extend(grounds[::-1])
+        new_ports.extend(ports[::-1])
 
-        new_ports.extend(ports[::-1])
+
+
+
         routes, ports = gf.routing.route_ports_to_side(component=self.component,
-                                       ports=ports1[3:6],
+                                       ports=[ports1[i] for i in [3,6]],
+                                       side="north",
+                                       radius=0,
+                                       cross_section=my_route_e,
+                                       separation=10)
+        routes, grounds = gf.routing.route_ports_to_side(component=self.component,
+                                       ports=[ports2[i] for i in [3,6]],
+                                       side="north",
+                                       radius=0,
+                                       cross_section=my_route_e,
+                                       separation=10)        
+        new_ground.extend(grounds[::-1])
+        new_ports.extend(ports[::-1])
+
+
+
+
+        routes, ports = gf.routing.route_ports_to_side(component=self.component,
+                                       ports=[ports1[i] for i in [4,7]],
+                                       side="north",
+                                       radius=0,
+                                       cross_section=my_route_e,
+                                       separation=10)
+        routes, grounds = gf.routing.route_ports_to_side(component=self.component,
+                                       ports=[ports2[i] for i in [4,7]],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
                                        separation=10)
         
+        new_ground.extend(grounds[::-1])
         new_ports.extend(ports[::-1])
+
+
+
+
         routes, ports = gf.routing.route_ports_to_side(component=self.component,
-                                       ports=ports1[6:9],
+                                       ports=[ports1[i] for i in [5,8]],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
                                        separation=10)
-        
-        
+        routes, grounds = gf.routing.route_ports_to_side(component=self.component,
+                                       ports=[ports2[i] for i in [5,8]],
+                                       side="north",
+                                       radius=0,
+                                       cross_section=my_route_e,
+                                       separation=10)
+        new_ground.extend(grounds[::-1])
         new_ports.extend(ports[::-1])
+
+
+        routes, ports = gf.routing.route_ports_to_side(component=self.component,
+                                       ports=ports1[9:12],
+                                       side="north",
+                                       radius=0,
+                                       cross_section=my_route_e,
+                                       separation=10)
+        routes, grounds = gf.routing.route_ports_to_side(component=self.component,
+                                       ports=ports2[9:12],
+                                       side="north",
+                                       radius=0,
+                                       cross_section=my_route_e,
+                                       separation=10)        
+        new_ground.extend(grounds[::-1])
+        new_ports.extend(ports[::-1])
+
+
         # print(new_ports)
         # print(ports1)
-        gf.routing.route_bundle_electrical(component=self.component, 
-                                           ports1=new_ports, ports2=ports2,
-                                           cross_section=my_route_e,
-                                           separation=15)
+        # gf.routing.route_bundle_electrical(component=self.component, 
+        #                                    ports1=new_ports, ports2=ports2,
+        #                                    cross_section=my_route_e,
+        #                                    separation=15)
 
 master_component=gf.Component("BenesCircuit")
 sw6x6 = Benes(
@@ -330,6 +378,7 @@ sw6x6.add_pads()
 
 sw6x6.interconnect_benes()
 
+sw6x6.interconnect_electrical()
 
 
 

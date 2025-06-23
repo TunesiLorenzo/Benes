@@ -73,15 +73,15 @@ class Benes:
 
 
     def add_electrical(self):      
-        contact = self.component << gf.components.rectangle(size=(5,5), layer=(12,0))
+        contact = self.component << gf.components.rectangle(size=(15,15), layer=(12,0))
         contact.dmove(origin=(0,0),destination=(self.mmi_l+2*self.bend_r+self.mmi_taper_l+self.pos[0],
-                                                self.mmi_gap/2+self.mmi_taper_w/2+2*self.bend_r+self.pos[1]-5/2+self.length_y))
+                                                self.mmi_gap/2+self.mmi_taper_w/2+2*self.bend_r+self.pos[1]-15/2+self.length_y))
         
         self.component.add_port(name=f"e_{self.instance}_1",port=contact["e1"])
 
-        contact = self.component << gf.components.rectangle(size=(5,5), layer=(12,0))
+        contact = self.component << gf.components.rectangle(size=(15,15), layer=(12,0))
         contact.dmove(origin=(0,0),destination=(self.mmi_l+2*self.bend_r+self.mmi_taper_l+self.arm_l-5+self.pos[0],
-                                                self.mmi_gap/2+self.mmi_taper_w/2+2*self.bend_r+self.pos[1]-5/2+self.length_y))
+                                                self.mmi_gap/2+self.mmi_taper_w/2+2*self.bend_r+self.pos[1]-15/2+self.length_y))
         self.component.add_port(name=f"e_{self.instance}_2",port=contact["e3"])
 
     def add_pads(self):
@@ -165,13 +165,13 @@ class Benes:
 
         
         c4 = self.component << crossing_function.copy()
-        c4.dmove(origin=(c4.x, c4.y), destination=(1530,140-54.58100))
+        c4.dmove(origin=(c4.x, c4.y), destination=(1530+150,140-54.58100))
 
         c5= self.component << crossing_function.copy()
-        c5.dmove(origin=(c5.x, c5.y), destination=(1610,40))
+        c5.dmove(origin=(c5.x, c5.y), destination=(1610+150,40))
 
         c6 = self.component << crossing_function.copy()
-        c6.dmove(origin=(c6.x, c6.y), destination=(1610,240-24.37900))
+        c6.dmove(origin=(c6.x, c6.y), destination=(1610+150,240-24.37900))
 
         
         gf.routing.route_bundle_sbend(component=self.component,
@@ -231,7 +231,7 @@ class Benes:
     def interconnect_electrical(self):
 
         my_route_e = gf.cross_section.metal_routing(
-            width=5,
+            width=15,
             layer=(12,0),
 
         )
@@ -254,13 +254,13 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=25)
+                                       separation=20+15)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=ports2[0:3],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=25)
+                                       separation=20+15)
         new_ground.append(grounds[1])
         new_ports.extend(ports[::-1])
 
@@ -272,13 +272,13 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=25)
+                                       separation=20+15)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=[ports2[i] for i in [3,6]],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=25)        
+                                       separation=20+15)        
         new_ground.append(grounds[0])
         new_ports.extend(ports[::-1])
 
@@ -290,13 +290,13 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=25)
+                                       separation=20+15)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=[ports2[i] for i in [4,7]],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=25)
+                                       separation=20+15)
         
         new_ground.append(grounds[0])
         new_ports.extend(ports[::-1])
@@ -309,13 +309,13 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=25)
+                                       separation=20+15)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=[ports2[i] for i in [5,8]],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=25)
+                                       separation=20+15)
         new_ground.append(grounds[0])
         new_ports.extend(ports[::-1])
 
@@ -325,13 +325,13 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=25)
+                                       separation=20+15)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=ports1[9:12],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=25,)        
+                                       separation=20+15,)        
         new_ground.append(grounds[1])
         new_ports.extend(ports[::-1])
 
@@ -373,16 +373,16 @@ sw6x6.create_OSE(pos=(x_spacing,2*y_spacing))
 sw6x6.create_OSE(pos=(x_spacing,y_spacing))
 sw6x6.create_OSE(pos=(x_spacing,0))
 
-x_spacing = 400 + 2*device_l
-sw6x6.create_OSE(pos=(x_spacing-1.5*device_l,1.5*y_spacing))
+x_spacing = 500 + 2*device_l
+sw6x6.create_OSE(pos=(x_spacing-1.5*device_l-50,1.5*y_spacing))
 sw6x6.create_OSE(pos=(x_spacing,2*y_spacing))
-sw6x6.create_OSE(pos=(x_spacing+1.5*device_l,1.5*y_spacing))
+sw6x6.create_OSE(pos=(x_spacing+1.5*device_l+50,1.5*y_spacing))
 
-sw6x6.create_OSE(pos=(x_spacing-1.5*device_l,0))
+sw6x6.create_OSE(pos=(x_spacing-1.5*device_l-50,0))
 sw6x6.create_OSE(pos=(x_spacing,0.5*y_spacing))
-sw6x6.create_OSE(pos=(x_spacing+1.5*device_l,0))
+sw6x6.create_OSE(pos=(x_spacing+1.5*device_l+50,0))
 
-x_spacing = x_spacing + 400 + 2*device_l
+x_spacing = x_spacing + 500 + 2*device_l
 
 sw6x6.create_OSE(pos=(x_spacing,2*y_spacing))
 sw6x6.create_OSE(pos=(x_spacing,y_spacing))

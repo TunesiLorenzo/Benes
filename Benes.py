@@ -8,7 +8,8 @@ class Benes:
                  heater_w=3, layer_heater=(11,0), layer_electrical=(12,0),
                  bend_r=8, mmi_l=5, mmi_w=5, mmi_gap=2, mmi_taper_l=2, mmi_taper_w=1.53,
                  num_pads=10, pad_size=76, pad_tolerance=2, pad_spacing=100, pad_clearance=800, 
-                 grating_number=8, fiberarray_spacing=127, fiberarray_clearance=100
+                 grating_number=8, fiberarray_spacing=127, fiberarray_clearance=100,
+                 thermal_trench=False, length_y=15,
                  ):
         
         self.component = component
@@ -38,6 +39,9 @@ class Benes:
         self.fiberarray_spacing=fiberarray_spacing
         self.fiberarray_clearance=fiberarray_clearance
 
+        self.thermal_trench = thermal_trench
+        self.length_y = length_y
+
     def create_OSE(self,pos=(0,0)):
         self.pos=pos
         self.create_mzi()
@@ -51,7 +55,7 @@ class Benes:
         xs_silicon = gf.cross_section.strip(width=self.wg_w, layer=self.layer_wg)
         xs_strip_metal = gf.cross_section.strip_heater_metal(width=self.wg_w, layer=self.layer_wg,heater_width=self.heater_w,layer_heater=self.layer_heater)
 
-        mzi = self.component << gf.components.mzis.mzi2x2_2x2_phase_shifter(length_x=self.arm_l, delta_length=self.arm_dl, cross_section=xs_silicon,
+        mzi = self.component << gf.components.mzis.mzi2x2_2x2_phase_shifter(length_x=self.arm_l, delta_length=self.arm_dl, cross_section=xs_silicon, length_y=self.length_y,
                                                                        straight_x_top=gf.components.straight_heater_metal_simple(length=self.arm_l,
                                                                                                                           cross_section_waveguide_heater=xs_strip_metal,
                                                                                                                           cross_section_heater=xs_metal, 
@@ -59,6 +63,8 @@ class Benes:
                                                                        splitter=gf.components.mmis.mmi2x2(width=self.wg_w,width_mmi=self.mmi_w,gap_mmi=self.mmi_gap,length_taper=self.mmi_taper_l,length_mmi=self.mmi_l,width_taper=self.mmi_taper_w),
                                                                        combiner=gf.components.mmis.mmi2x2(width=self.wg_w,width_mmi=self.mmi_w,gap_mmi=self.mmi_gap,length_taper=self.mmi_taper_l,length_mmi=self.mmi_l,width_taper=self.mmi_taper_w),
                                                                        bend=gf.components.bends.bend_euler(width=self.wg_w,radius=self.bend_r))
+        thermal_t = self.component << gf.components.rectangle(size=(self.arm_l-20,20),layer=(203,0))
+        thermal_t.move(origin=(0,0),destination=(self.pos[0]+self.mmi_l+self.mmi_taper_l+2*self.bend_r+10,self.pos[1]-12))
         mzi.move(origin=(0,0),destination=self.pos)
         self.component.add_port(name=f"o_{self.instance}_1",port=mzi["o2"])
         self.component.add_port(name=f"o_{self.instance}_2",port=mzi["o1"])
@@ -67,15 +73,15 @@ class Benes:
 
 
     def add_electrical(self):      
-        contact = self.component << gf.components.rectangle(size=(self.heater_w,self.heater_w), layer=(12,0))
+        contact = self.component << gf.components.rectangle(size=(5,5), layer=(12,0))
         contact.dmove(origin=(0,0),destination=(self.mmi_l+2*self.bend_r+self.mmi_taper_l+self.pos[0],
-                                                self.mmi_gap/2+self.mmi_taper_w/2+2*self.bend_r+self.pos[1]+2-self.heater_w/2))
+                                                self.mmi_gap/2+self.mmi_taper_w/2+2*self.bend_r+self.pos[1]-5/2+self.length_y))
         
         self.component.add_port(name=f"e_{self.instance}_1",port=contact["e1"])
 
-        contact = self.component << gf.components.rectangle(size=(self.heater_w,self.heater_w), layer=(12,0))
-        contact.dmove(origin=(0,0),destination=(self.mmi_l+2*self.bend_r+self.mmi_taper_l+self.arm_l-self.heater_w+self.pos[0],
-                                                self.mmi_gap/2+self.mmi_taper_w/2+2*self.bend_r+self.pos[1]+2-self.heater_w/2))
+        contact = self.component << gf.components.rectangle(size=(5,5), layer=(12,0))
+        contact.dmove(origin=(0,0),destination=(self.mmi_l+2*self.bend_r+self.mmi_taper_l+self.arm_l-5+self.pos[0],
+                                                self.mmi_gap/2+self.mmi_taper_w/2+2*self.bend_r+self.pos[1]-5/2+self.length_y))
         self.component.add_port(name=f"e_{self.instance}_2",port=contact["e3"])
 
     def add_pads(self):
@@ -227,6 +233,7 @@ class Benes:
         my_route_e = gf.cross_section.metal_routing(
             width=5,
             layer=(12,0),
+
         )
                 
         ports1=[]
@@ -247,13 +254,13 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=20)
+                                       separation=25)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=ports2[0:3],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=20)
+                                       separation=25)
         new_ground.append(grounds[1])
         new_ports.extend(ports[::-1])
 
@@ -265,13 +272,13 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=20)
+                                       separation=25)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=[ports2[i] for i in [3,6]],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=20)        
+                                       separation=25)        
         new_ground.append(grounds[0])
         new_ports.extend(ports[::-1])
 
@@ -283,13 +290,13 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=20)
+                                       separation=25)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=[ports2[i] for i in [4,7]],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=20)
+                                       separation=25)
         
         new_ground.append(grounds[0])
         new_ports.extend(ports[::-1])
@@ -302,13 +309,13 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=20)
+                                       separation=25)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=[ports2[i] for i in [5,8]],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=20)
+                                       separation=25)
         new_ground.append(grounds[0])
         new_ports.extend(ports[::-1])
 
@@ -318,13 +325,13 @@ class Benes:
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=20)
+                                       separation=25)
         routes, grounds = gf.routing.route_ports_to_side(component=self.component,
                                        ports=ports1[9:12],
                                        side="north",
                                        radius=0,
                                        cross_section=my_route_e,
-                                       separation=20,)        
+                                       separation=25,)        
         new_ground.append(grounds[1])
         new_ports.extend(ports[::-1])
 
@@ -341,7 +348,7 @@ class Benes:
                                                    self.component["Pad_16"],self.component["Pad_17"],self.component["Pad_18"],
                                                    self.component["Pad_0"],self.component["Pad_3"],self.component["Pad_6"],self.component["Pad_9"],self.component["Pad_19"],],
                                            cross_section=my_route_e,
-                                           separation=15)
+                                           separation=20)
 
 master_component=gf.Component("BenesCircuit")
 sw6x6 = Benes(
@@ -395,7 +402,7 @@ sw6x6.interconnect_electrical()
 
 
 master_component.pprint_ports()
-master_component.draw_ports()
+# master_component.draw_ports()
 master_component.write_gds(f"benes_test.gds")
 
 
